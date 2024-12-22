@@ -11,6 +11,8 @@ config = {
 
 def parse_param(arg):
     global config
+    if len(arg) == 0:
+        show_help()
     for i in arg:
         if config.get("action") == None:
             if i == "install" or i == "i":
