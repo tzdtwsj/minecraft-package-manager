@@ -1,4 +1,3 @@
-
 import urllib.request
 import urllib.parse
 import urllib.error
@@ -10,6 +9,40 @@ import hashlib
 
 class ParamError(Exception):
     pass
+
+class GolbalConfig:
+    def __init__(self):
+        self.configs = self.__loadToMemory()
+
+    def __minecrafts(self):
+        installed = self.configs["minecrafts"]
+        return installed
+    
+    def __servers(self):
+        installed = self.configs["servers"]
+        return installed
+
+    def __loadToMemory(self):
+        if os.path.exists(".mpm/GolbalConfigs.json"):
+            with open(".mpm/GolbalConfigs.json", "r") as f:
+                return json.load(f)
+            
+    def __saveToLocal(self, data: dict):
+        with open(".mpm/GolbalConfigs.json", "w") as f:
+            f.write(json.dumps(data, indent=4))
+
+    def getAllServers(self):
+        return self.__servers()
+
+    def getAllMinecrafts(self):
+        return self.__minecrafts()
+
+    def destory(self):
+        self.__saveToLocal(self.configs)
+
+    def add_package(self, package_info, id):
+        self.configs["minecrafts"][id]['installed'].append(package_info)
+        self.__saveToLocal(self.configs)
 
 def print_progress(downloaded_size,size=None):
     if not size == None:
@@ -199,13 +232,11 @@ def modrinth_install_package(config):
     elif pkgdata[0] == 404:
         print("找不到软件包 "+config['data'][1])
         return
-    if os.path.exists(".mpm/package.json"):
-        with open(".mpm/package.json","r") as f:
-            pkgcfg = json.loads(f.read(os.path.getsize(".mpm/package.json")))
-        for i in pkgcfg['installed']:
-            if i['id'] == pkgdata[1]['id']:
-                print("该软件包"+config['data'][1]+"已被安装")
-                return
+    global_config = GolbalConfig()
+    for i in global_config.configs['installed']:
+        if i['id'] == pkgdata[1]['id']:
+            print("该软件包"+config['data'][1]+"已被安装")
+            return
     if not config['data'][0] in pkgdata[1]['loaders']:
         print("错误：不支持的加载器"+config['data'][0]+"，该软件包仅支持以下加载器：",end="")
         for i in pkgdata[1]['loaders']:
@@ -255,17 +286,20 @@ def modrinth_install_package(config):
         if not os.path.exists("plugins"):
             os.mkdir("plugins")
         os.rename(".mpm/tmp/tmp_"+file_name,"plugins/"+file_name)
-    if os.path.exists(".mpm/package.json"):
-        with open(".mpm/package.json","r") as f:
-            pkgcfg = json.loads(f.read(os.path.getsize(".mpm/package.json")))
-    else:
-        pkgcfg = {
-            "installed": []
-        }
-    pkgcfg['installed'].append({"package":config['data'][1],"source":"modrinth","loader":config['data'][0],"game_version":version,"id":vers[0]['project_id'],"version_id":vers[0]['id'],"files":{file_name:file_sha1}})
-    with open(".mpm/package.json","w") as f:
-        f.write(json.dumps(pkgcfg,indent=4))
+    package_info = {
+        "package": config['data'][1],
+        "source": "modrinth",
+        "loader": config['data'][0],
+        "game_version": version,
+        "id": vers[0]['project_id'],
+        "version_id": vers[0]['id'],
+        "files": {file_name: file_sha1}
+    }
+    global_config.add_package(package_info)
     print("软件包"+config['data'][1]+"已成功安装")
+
+def undefinedFunc():
+    print("此功能暂未实现，请关注Github最新资讯。")
 
 def show_help():
     print(f"""mpm v{VERSION} By tzdtwsj

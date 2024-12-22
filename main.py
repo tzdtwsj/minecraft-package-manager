@@ -25,6 +25,8 @@ def parse_param(arg):
                 config['action'] = "m-search"
             elif i == "m-show":
                 config['action'] = "m-show"
+            elif i == "config":
+                config['action'] = "config"
             elif i == "help" or i == "-h" or i == "--help":
                 show_help()
             else:
@@ -38,14 +40,16 @@ def main():
     global config
     parse_param(sys.argv[1:])
     if config.get("action") == "install":
-        install_package(config)
+        undefinedFunc()
     elif config.get("action") == "remove":
-        remove_package(config)
+        undefinedFunc()
     elif config.get("action") == "m-install":
         modrinth_install_package(config)
     elif config.get("action") == "m-search":
         modrinth_search_package(config)
     elif config.get("action") == "m-show":
+        modrinth_show_package(config)
+    elif config.get("action") == "config":
         modrinth_show_package(config)
     return 0
 
