@@ -36,6 +36,42 @@ def parse_param(arg):
                 show_help()
             config["data"].append(i)
 
+def config_minecraft(config):
+    global_config = GolbalConfig()
+    if len(config['data']) < 5:
+        print("错误：缺少参数")
+        print(f"用法：{os.path.basename(sys.argv[0])} config minecraft <id> <type> <name> <version> <path> [modPath] [installedMods]")
+        return
+    minecraft_id = config['data'][0]
+    minecraft_type = config['data'][1]
+    minecraft_name = config['data'][2]
+    minecraft_version = config['data'][3]
+    minecraft_path = config['data'][4]
+
+    if minecraft_type not in ["forge", "fabric", "vanilla"]:
+        print("错误：无效的Minecraft类型。类型只能是'forge'、'fabric'或'vanilla'")
+        return
+
+    if minecraft_type == "vanilla":
+        mod_path = "null"
+        installed_mods = ["null"]
+    else:
+        mod_path = config['data'][5] if len(config['data']) > 5 else "null"
+        installed_mods = config['data'][6:] if len(config['data']) > 6 else ["null"]
+
+    minecraft_config = {
+        "type": minecraft_type,
+        "name": minecraft_name,
+        "version": minecraft_version,
+        "path": minecraft_path,
+        "modPath": mod_path,
+        "installedMods": installed_mods
+    }
+
+    global_config.configs["minecrafts"][minecraft_id] = minecraft_config
+    global_config.destory()
+    print(f"Minecraft配置已更新：{minecraft_id}")
+
 def main():
     global config
     parse_param(sys.argv[1:])
@@ -50,7 +86,10 @@ def main():
     elif config.get("action") == "m-show":
         modrinth_show_package(config)
     elif config.get("action") == "config":
-        modrinth_show_package(config)
+        if config['data'][0] == "minecraft":
+            config_minecraft(config)
+        else:
+            print("无效配置类型")
     return 0
 
 if __name__ == "__main__":
