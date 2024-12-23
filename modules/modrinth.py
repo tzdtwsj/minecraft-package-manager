@@ -42,12 +42,12 @@ def modrinth_search(name):
     except json.decoder.JSONDecodeError:
         return 1, data[1]
 
-def modrinth_search_package(config):
-    if len(config.get("data")) == 0:
+def modrinth_search_package(params):
+    if len(params) == 0:
         print("错误：缺少参数")
         print("用法："+os.path.basename(sys.argv[0])+" m-search 内容 [内容 内容 ...]")
         return
-    for i in config.get("data"):
+    for i in params:
         data = modrinth_search(i)
         if data[0] == 0:
             print("无法连接到modrinth")
@@ -84,12 +84,12 @@ def modrinth_show(name):
     except json.decoder.JSONDecodeError:
         return data[0], data[1]
 
-def modrinth_show_package(config):
-    if len(config.get("data")) == 0:
+def modrinth_show_package(params):
+    if len(params) == 0:
         print("错误：缺少参数")
         print("用法："+os.path.basename(sys.argv[0])+" m-show 软件包 [软件包 软件包 ...]")
         return
-    for i in config.get("data"):
+    for i in params:
         data = modrinth_show(i)
         if data[0] == 0:
             print("无法连接到modrinth")
@@ -124,12 +124,12 @@ def modrinth_show_version(project,loaders,versions):
     except json.decoder.JSONDecodeError:
         return data[0], data[1]
 
-def modrinth_install_package(config):
-    if len(config['data']) < 2:
+def modrinth_install_package(params):
+    if len(params) < 2:
         print("错误：缺少参数")
         print(f"用法：{os.path.basename(sys.argv[0])} m-install 加载器 软件包[,软件包] [游戏版本]")
         return
-    pkgs = config['data'][1].split(",")
+    pkgs = params[1].split(",")
     for pkg in pkgs:
         pkgdata = modrinth_show(pkg)
         if pkgdata[0] == 0:
@@ -150,14 +150,14 @@ def modrinth_install_package(config):
                     break
             if not status:
                 continue
-        if not config['data'][0] in pkgdata[1]['loaders']:
-            print("\033[91m错误：不支持的加载器"+config['data'][0]+"\033[0m\n该软件包仅支持以下加载器：",end="")
+        if not params[0] in pkgdata[1]['loaders']:
+            print("\033[91m错误：不支持的加载器"+params[0]+"\033[0m\n该软件包仅支持以下加载器：",end="")
             for i in pkgdata[1]['loaders']:
                 print(i+" ",end="")
             print()
             continue
-        if len(config['data']) >= 3:
-            version = config['data'][2]
+        if len(params) >= 3:
+            version = params[2]
             if not version in pkgdata[1]['game_versions']:
                 print("\033[91m错误：不支持的MC版本"+version+"\033[0m\n该软件包仅支持以下MC版本：",end="")
                 for i in pkgdata[1]['game_versions']:
@@ -177,7 +177,7 @@ def modrinth_install_package(config):
                 result = input("(y/N)")
                 if not (result.lower() == "y" or result.lower() == "yes"):
                     continue
-        vers = modrinth_show_version(pkg,[config['data'][0]],[version])[1]
+        vers = modrinth_show_version(pkg,[params[0]],[version])[1]
         file_sha1 = vers[0]['files'][0]['hashes']['sha1']
         file_name = vers[0]['files'][0]['filename']
         file_url = vers[0]['files'][0]['url']
@@ -203,7 +203,7 @@ def modrinth_install_package(config):
             os.remove(".mpm/tmp/tmp_"+file_name)
             continue
         print("安装软件包中")
-        if config['data'][0] == "forge" or config['data'][0] == "fabric" or config['data'][0] == "neoforge":
+        if params[0] == "forge" or params[0] == "fabric" or params[0] == "neoforge":
             if not os.path.exists("mods"):
                 os.mkdir("mods")
             if os.path.exists("mods/"+file_name):
@@ -222,20 +222,20 @@ def modrinth_install_package(config):
             pkgcfg = {
                 "installed": []
             }
-        pkgcfg['installed'].append({"package":"modrinth/"+pkg,"type":"modrinth","loader":config['data'][0],"game_version":version,"id":vers[0]['project_id'],"version_id":vers[0]['id'],"files":{file_name:file_sha1}})
+        pkgcfg['installed'].append({"package":"modrinth/"+pkg,"type":"modrinth","loader":params[0],"game_version":version,"id":vers[0]['project_id'],"version_id":vers[0]['id'],"files":{file_name:file_sha1}})
         with open(".mpm/package.json","w") as f:
             f.write(json.dumps(pkgcfg,indent=4)+"\n")
         print("\033[92m软件包modrinth/"+pkg+"已成功安装\033[0m")
 
-def modrinth_remove_package(config):
-    if len(config['data']) == 0:
+def modrinth_remove_package(params):
+    if len(params) == 0:
         print("错误：缺少参数")
         print("用法："+os.path.basename(sys.argv[0])+" m-remove 软件包 [软件包 软件包 ...]")
         return
     if not os.path.exists(".mpm/package.json"):
         print("\033[91m没有软件包被安装，因此无法卸载\033[0m")
         return
-    for i in config['data']:
+    for i in params:
         i = "modrinth/"+i
         with open(".mpm/package.json","r") as f:
             pkgcfg = json.loads(f.read(os.path.getsize(".mpm/package.json")))

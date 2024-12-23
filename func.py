@@ -150,7 +150,7 @@ def request(url, method='GET', data=None, headers=None, save_name=None, timeout=
         else:
             return False
 
-def list_package(config):
+def list_package(params):
     if not os.path.exists(".mpm/package.json"):
         print("没有软件包被安装")
         return

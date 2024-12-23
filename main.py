@@ -53,7 +53,7 @@ def main():
                 print("不存在的函数名"+func_name+"，功能尚未实现？")
                 return
             break
-    action_func(config)
+    action_func(config['data'])
 
 def sigterm(_1,_2):
     release_lock()
