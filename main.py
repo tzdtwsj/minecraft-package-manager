@@ -63,13 +63,8 @@ def sigint(_1,_2):
     release_lock()
     sys.exit(130)
 
-def sigquit(_1,_2):
-    release_lock()
-    sys.exit(131)
-
 signal.signal(signal.SIGINT,sigint)
 signal.signal(signal.SIGTERM,sigterm)
-signal.signal(signal.SIGQUIT,sigterm)
 
 if __name__ == "__main__":
     try:

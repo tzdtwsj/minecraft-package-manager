@@ -35,12 +35,12 @@ commands = {
     ]
 }
 
-def register(name,cmd,func_name,alias=[],help_text="无帮助"):
+def register(name:str,cmd:str,func_name:str,alias:list=[],help_text:str="无帮助"):
     global commands
     if commands.get(name) == None:
         commands[name] = []
     commands[name].append({"cmd":cmd,"alias":alias,"func_name":func_name,"help":help_text})
 
-def registers(name,cmds):
+def registers(name:str,cmds:list):
     for i in cmds:
         register(name,i['cmd'],i['func_name'],i.get("alias",[]),i.get("help","无帮助"))

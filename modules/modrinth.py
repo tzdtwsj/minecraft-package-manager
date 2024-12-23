@@ -136,7 +136,7 @@ def modrinth_install_package(config):
             print("无法连接到modrinth")
             return
         elif pkgdata[0] == 404:
-            print("\033[91m找不到软件包 "+pkg+"\033[0m")
+            print("\033[91m找不到软件包 modrinth/"+pkg+"\033[0m")
             continue
         pkgcfg = None
         if os.path.exists(".mpm/package.json"):
@@ -145,7 +145,7 @@ def modrinth_install_package(config):
             status = True
             for i in pkgcfg['installed']:
                 if i['id'] == pkgdata[1]['id'] or i['package'] == pkgdata[1]['slug']:
-                    print("软件包"+pkg+"已被安装")
+                    print("软件包modrinth/"+pkg+"已被安装")
                     status = False
                     break
             if not status:
@@ -171,7 +171,7 @@ def modrinth_install_package(config):
             for i in pkgcfg['installed']:
                 if not i['game_version'] == version:
                     status = True
-                    print("\033[93m软件包"+pkg+"安装的MC版本("+version+")和目前已安装软件包"+i['package']+"的MC("+i['game_version']+")版本不相同\033[0m")
+                    print("\033[93m软件包modrinth/"+pkg+"安装的MC版本("+version+")和目前已安装软件包"+i['package']+"的MC("+i['game_version']+")版本不相同\033[0m")
             if status:
                 print("\033[93m要继续进行安装吗？\033[0m")
                 result = input("(y/N)")
@@ -187,7 +187,7 @@ def modrinth_install_package(config):
         if not os.path.exists(".mpm/tmp"):
             os.mkdir(".mpm/tmp")
         print("正在下载软件包所需的内容，MC版本"+version)
-        print("下载"+file_url+" 来自软件包"+pkg)
+        print("下载"+file_url+" 来自软件包modrinth/"+pkg)
         response = request(file_url,save_name=".mpm/tmp/tmp_"+file_name,timeout=60)
         if not response == 200:
             print("\033[91m错误：在尝试下载软件包时出了错")
@@ -222,10 +222,10 @@ def modrinth_install_package(config):
             pkgcfg = {
                 "installed": []
             }
-        pkgcfg['installed'].append({"package":pkg,"type":"modrinth","loader":config['data'][0],"game_version":version,"id":vers[0]['project_id'],"version_id":vers[0]['id'],"files":{file_name:file_sha1}})
+        pkgcfg['installed'].append({"package":"modrinth/"+pkg,"type":"modrinth","loader":config['data'][0],"game_version":version,"id":vers[0]['project_id'],"version_id":vers[0]['id'],"files":{file_name:file_sha1}})
         with open(".mpm/package.json","w") as f:
             f.write(json.dumps(pkgcfg,indent=4)+"\n")
-        print("\033[92m软件包"+pkg+"已成功安装\033[0m")
+        print("\033[92m软件包modrinth/"+pkg+"已成功安装\033[0m")
 
 def modrinth_remove_package(config):
     if len(config['data']) == 0:
@@ -236,6 +236,7 @@ def modrinth_remove_package(config):
         print("\033[91m没有软件包被安装，因此无法卸载\033[0m")
         return
     for i in config['data']:
+        i = "modrinth/"+i
         with open(".mpm/package.json","r") as f:
             pkgcfg = json.loads(f.read(os.path.getsize(".mpm/package.json")))
         status = False

@@ -157,9 +157,56 @@ def list_package(config):
     with open(".mpm/package.json","r") as f:
         pkgcfg = json.loads(f.read(os.path.getsize(".mpm/package.json")))
     print("已安装的软件包")
-    print("软件包名/类型 加载器 游戏版本")
+    print("\033[92m软件包名\033[0m|类型 加载器")
     for i in pkgcfg['installed']:
-        print("\033[92m"+i['package']+"\033[0m/"+i['type']+" "+i['loader']+" "+i['game_version'])
+        print("\033[92m"+i['package']+"\033[0m|"+i['type']+" "+i['loader'])
+
+def add_package_list(package_name:str,data:dict):
+    if not os.path.exists(".mpm/package.json"):
+        if not os.path.exists(".mpm"):
+            os.mkdir(".mpm")
+        with open(".mpm/package.json","w") as f:
+            f.write(json.dumps({"installed":[]},indent=4)+"\n")
+    with open(".mpm/package.json","r") as f:
+        pkgcfg = json.loads(f.read(os.path.getsize(".mpm/package.json")))
+    if pkgcfg.get('installed') == None:
+        pkgcfg['installed'] = []
+    for i in pkgcfg['installed']:
+        if i['package'] == package_name:
+            return False
+    pkgcfg['installed'].append({"package":package_name})
+    for i in data:
+        pkgcfg['installed'][len(pkgcfg['installed'])-1][i] = data[i]
+    with open(".mpm/package.json","w") as f:
+        f.write(json.dumps(pkgcfg,indent=4)+"\n")
+    return True
+
+def remove_package(package_name:str):
+    if not os.path.exists(".mpm/package.json"):
+        return False
+    with open(".mpm/package.json","r") as f:
+        pkgcfg = json.loads(f.read(os.path.getsize(".mpm/package.json")))
+    if pkgcfg.get('installed') == None:
+        return False
+    new_pkgcfg_installed = []
+    for i in pkgcfg['installed']:
+        if not package_name == i['package']:
+            new_pkgcfg_installed.append(i)
+    pkgcfg['installed'] = new_pkgcfg_installed
+    with open(".mpm/package.json","w") as f:
+        f.write(json.dumps(pkgcfg,indent=4)+"\n")
+    return True
+
+def get_package(package_name:str):
+    if not os.path.exists(".mpm/package.json"):
+        return False
+    with open(".mpm/package.json","r") as f:
+        pkgcfg = json.loads(f.read(os.path.getsize(".mpm/package.json")))
+    if pkgcfg.get('installed') == None:
+        return False
+    for i in pkgcfg['installed']:
+        if i['package'] == package_name:
+            return i
 
 def show_help(_=None):
     from commands import commands
