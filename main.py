@@ -2,12 +2,14 @@
 import sys
 import os
 from func import *
+import modules
 import traceback
 import signal
+import commands
 
 config = {
     "action": None,
-    "data": [],
+    "data": None,
     "params": {}
 }
 
@@ -15,56 +17,57 @@ def parse_param(arg):
     global config
     if len(arg) == 0:
         show_help()
+    action = None
+    module_name = None
+    func_name = None
+    data = []
     for i in arg:
-        if config.get("action") == None:
-            if i == "install" or i == "i":
-                config['action'] = "install"
-            elif i == "remove" or i == "uninstall" or i == "r":
-                config['action'] = "remove"
-            elif i == "list" or i == "l":
-                config['action'] = "list"
-            elif i == "m-install" or i == "m-i":
-                config['action'] = "m-install"
-            elif i == "m-search" or i == "m-s":
-                config['action'] = "m-search"
-            elif i == "m-show":
-                config['action'] = "m-show"
-            elif i == "m-remove" or i == "m-uninstall" or i == "m-r":
-                config['action'] = "m-remove"
-            elif i == "help" or i == "-h" or i == "--help":
-                show_help()
-            else:
+        if action == None:
+            for j in commands.commands:
+                for k in commands.commands[j]:
+                    if i == k['cmd'] or i in k['alias']:
+                        action = k['cmd']
+                        func_name = k['func_name']
+                        module_name = j
+                        break
+                if not action == None:
+                    break
+            if action == None:
                 raise ParamError("无效操作 "+i)
         else:
-            if i == "--help" or i == "-h":
-                show_help()
-            config["data"].append(i)
+            data.append(i)
+    return action, data, func_name, module_name
+        
 
 def main():
     global config
     if sys.platform.startswith("win"):
         windows_open_ansi()
-    parse_param(sys.argv[1:])
+    config['action'], config['data'], func_name, module_name = parse_param(sys.argv[1:])
     get_lock()
-    if config.get("action") == "install":
-        install_package(config)
-    elif config.get("action") == "remove":
-        remove_package(config)
-    elif config.get("action") == "list":
-        list_package(config)
-    elif config.get("action") == "m-install":
-        modrinth_install_package(config)
-    elif config.get("action") == "m-search":
-        modrinth_search_package(config)
-    elif config.get("action") == "m-show":
-        modrinth_show_package(config)
-    elif config.get("action") == "m-remove":
-        modrinth_remove_package(config)
+    for i in modules.modules:
+        if i == module_name:
+            try:
+                action_func = getattr(modules.modules[i],func_name)
+            except AttributeError:
+                print("不存在的函数名"+func_name+"，功能尚未实现？")
+                return
+            break
+    action_func(config)
 
-def sigterm():
+def sigterm(_1,_2):
     release_lock()
+    sys.exit(143)
 
-signal.signal(signal.SIGINT,sigterm)
+def sigint(_1,_2):
+    release_lock()
+    sys.exit(130)
+
+def sigquit(_1,_2):
+    release_lock()
+    sys.exit(131)
+
+signal.signal(signal.SIGINT,sigint)
 signal.signal(signal.SIGTERM,sigterm)
 signal.signal(signal.SIGQUIT,sigterm)
 
@@ -75,6 +78,8 @@ if __name__ == "__main__":
         sys.exit(0)
     except ParamError as e:
         print("参数错误："+str(e))
+    except ShowHelpException:
+        pass
     except Exception:
         traceback.print_exc()
-        release_lock()
+    release_lock()
