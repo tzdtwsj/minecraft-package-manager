@@ -86,6 +86,7 @@ def install(pkg,pre_version=None):
                 return False
         else:
             version = tags[0]["name"]
+            commit_sha = tags[0]['commit']['sha']
         print("获取tooth数据中",end="\r")
         tooth_data = request(GHPROXY+"https://github.com/"+pkg.split("/")[1]+"/"+pkg.split("/")[2]+"/raw/"+version+"/tooth.json",headers={"User-Agent":"Mozilla/5.0 (Linux; Android 13; Phone) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Mobile Safari/537.36 EdgA/113.0.1774.38"})
         if tooth_data == False:
@@ -99,26 +100,24 @@ def install(pkg,pre_version=None):
         elif tooth_data[0] != 200:
             print("请求tooth包数据失败："+str(tooth_data))
             return False
-        tooth_data = json.loads(tooth_data[1])
+        try:
+            tooth_data = json.loads(tooth_data[1])
+        except json.decoder.JSONDecodeError:
+            print("\033[91m该软件包的tooth.json无效，JSON解析失败\033[0m")
+            return False
         base_dir = "/"
         if not check_tooth_data(pkg,tooth_data):
-            print(tooth_data)
             print("\033[91m该软件包的tooth.json无效\033[0m")
             return False
+        pkg = tooth_data.get('tooth')
         if tooth_data.get("platforms"): # 特定架构的配置替代原本的配置
             for i in tooth_data.get("platforms"): # 同系统没指定架构
                 if i['goos'] == GOOS and i.get('goarch') == None:
-                    #tooth_data['commands'] = {}
-                    #tooth_data['dependencies'] = {}
-                    #tooth_data['files'] = {}
                     for j in ["asset_url","commands","dependencies","prerequisites","files"]:
                         if i.get(j) != None:
                             tooth_data[j] = i.get(j)
             for i in tooth_data.get("platforms"):# 同系统同架构
                 if i['goos'] == GOOS and i.get('goarch') != None and i.get('goarch') == GOARCH:
-                    #tooth_data['commands'] = {}
-                    #tooth_data['dependencies'] = {}
-                    #tooth_data['files'] = {}
                     for j in ["asset_url","commands","dependencies","prerequisites","files"]:
                         if i.get(j) != None:
                             tooth_data[j] = i.get(j)
@@ -145,7 +144,7 @@ def install(pkg,pre_version=None):
                 if reqdata == False:
                     print("\033[91m错误：该软件包依赖"+j+"未安装，请手动安装该依赖\033[0m")
                     return False
-                elif not compare_version(reqdata['version'],tooth_data.get("prerequisites")):
+                elif not compare_version(reqdata['version'],tooth_data.get("prerequisites")[j]):
                     print("\033[91m错误：该软件包所依赖的另一个软件包"+j+"已安装，但版本"+depdata['version']+"与该软件包所定义的依赖版本范围"+tooth_data.get("dependencies")[j]+"不符合\033[0m")
                     return False
         suffix = ".zip"
@@ -186,15 +185,123 @@ def install(pkg,pre_version=None):
         add_package_to_list(pkg,get_module_name(__name__),{'version':version[1:],'files':files,'tooth_data':tooth_data})
         shutil.rmtree(".mpm/tmp/"+save_name)
         os.remove(".mpm/tmp/"+save_name+suffix)
+    else:
+        if not os.path.exists(pkg):
+            print("\033[91m找不到软件包"+pkg+"\033[0m")
+            return False
+        save_name = "Local_"+pkg.replace("/","_").replace("\\","_")
+        try:
+            unzip(pkg,".mpm/tmp/"+save_name)
+        except zipfile.BadZipFile:
+            print("\033[91m无效的软件包"+pkg+"\033[0m")
+            return False
+        if not os.path.exists(".mpm/tmp/"+save_name+"/tooth.json"):
+            print("\033[91m找不到tooth.json，软件包打包时是否套文件夹？\033[0m")
+            shutil.rmtree(".mpm/tmp/"+save_name)
+            return False
+        with open(".mpm/tmp/"+save_name+"/tooth.json","r") as f:
+            tooth_data = f.read(os.path.getsize(".mpm/tmp/"+save_name+"/tooth.json"))
+        try:
+            tooth_data = json.loads(tooth_data)
+        except json.decoder.JSONDecodeError:
+            print("\033[91m该软件包的tooth.json无效，JSON解析失败\033[0m")
+            shutil.rmtree(".mpm/tmp/"+save_name)
+            return False
+        if not check_tooth_data(pkg,tooth_data,no_check_pkg_name=True):
+            print("\033[91m该软件包的tooth.json无效\033[0m")
+            shutil.rmtree(".mpm/tmp/"+save_name)
+            return False
+        pkg = tooth_data.get('tooth')
+        if get_package_from_list(pkg,get_module_name(__name__)) != False:
+            print("该软件包"+pkg+"已安装")
+            return True
+        version = tooth_data.get('version')
+        if tooth_data.get("platforms"): # 特定架构的配置替代原本的配置
+            for i in tooth_data.get("platforms"): # 同系统没指定架构
+                if i['goos'] == GOOS and i.get('goarch') == None:
+                    for j in ["asset_url","commands","dependencies","prerequisites","files"]:
+                        if i.get(j) != None:
+                            tooth_data[j] = i.get(j)
+            for i in tooth_data.get("platforms"):# 同系统同架构
+                if i['goos'] == GOOS and i.get('goarch') != None and i.get('goarch') == GOARCH:
+                    for j in ["asset_url","commands","dependencies","prerequisites","files"]:
+                        if i.get(j) != None:
+                            tooth_data[j] = i.get(j)
+        if tooth_data.get("dependencies") != None:
+            for j in tooth_data.get("dependencies"):
+                depdata = get_package_from_list(j,get_module_name(__name__))
+                if depdata == False:
+                    if install(j,tooth_data.get("dependencies")[j]) == False:
+                        shutil.rmtree(".mpm/tmp/"+save_name)
+                        return False
+                elif not compare_version(depdata['version'],tooth_data.get("dependencies")[j]):
+                    print("\033[91m错误：该软件包所依赖的另一个软件包"+j+"已安装，但版本"+depdata['version']+"与该软件包所定义的依赖版本范围"+tooth_data.get("dependencies")[j]+"不符合\033[0m")
+                    shutil.rmtree(".mpm/tmp/"+save_name)
+                    return False
+        if tooth_data.get("prerequisites") != None:
+            for j in tooth_data.get("prerequisites"):
+                reqdata = get_package_from_list(j,get_module_name(__name__))
+                if reqdata == False:
+                    print("\033[91m错误：该软件包依赖"+j+"未安装，请手动安装该依赖\033[0m")
+                    shutil.rmtree(".mpm/tmp/"+save_name)
+                    return False
+                elif not compare_version(reqdata['version'],tooth_data.get("prerequisites")[j]):
+                    print("\033[91m错误：该软件包所依赖的另一个软件包"+j+"已安装，但版本"+depdata['version']+"与该软件包所定义的依赖版本范围"+tooth_data.get("dependencies")[j]+"不符合\033[0m")
+                    shutil.rmtree(".mpm/tmp/"+save_name)
+                    return False
+        suffix = ".zip"
+        if tooth_data.get("asset_url") != None:
+            url = tooth_data.get("asset_url").replace("$(version)",version[1:])
+            if url[:19] == "https://github.com/":
+                url = GHPROXY + url
+            if url.endswith(".zip"):
+                suffix = ".zip"
+            elif url.endswith(".tar.gz") or url.endswith(".tgz"):
+                suffix = ".tar.gz"
+            if not os.path.exists(".mpm/tmp"):
+                os.mkdir(".mpm/tmp")
+            shutil.rmtree(".mpm/tmp/"+save_name)
+            print("下载数据中，从"+url)
+            request(url=url,save_name=".mpm/tmp/"+save_name+suffix,headers={"User-Agent":"Mozilla/5.0 (Linux; Android 13; Phone) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Mobile Safari/537.36 EdgA/113.0.1774.38"})
+            if suffix == ".zip":
+                unzip(".mpm/tmp/"+save_name+suffix,".mpm/tmp/"+save_name)
+            elif suffix == ".tar.gz":
+                untgz(".mpm/tmp/"+save_name+suffix,".mpm/tmp/"+save_name)
+        print("安装"+pkg+"中")
+        if tooth_data.get("commands") != None and tooth_data.get("commands").get("pre-install") != None:
+            for i in tooth_data.get("commands").get("pre-install"):
+                ret = os.system(i)
+        elif tooth_data.get("commands") != None and tooth_data.get("commands").get("pre_install") != None:
+            for i in tooth_data.get("commands").get("pre_install"):
+                ret = os.system(i)
+        files = {}
+        if tooth_data.get("files") != None and tooth_data.get("files").get("place") != None:
+            for i in tooth_data.get("files").get("place"):
+                places = place_files(".mpm/tmp/"+save_name+"/",i['src'],i['dest'])
+                if places == False:
+                    print("\033[91m源文件"+i[src]+"不存在，无法安装文件\033[0m")
+                    return False
+                for j in places:
+                    files[j] = places[j]
+        if tooth_data.get("commands") != None and tooth_data.get("commands").get("post-install") != None:
+            for i in tooth_data.get("commands").get("post-install"):
+                ret = os.system(i)
+        elif tooth_data.get("commands") != None and tooth_data.get("commands").get("post_install") != None:
+            for i in tooth_data.get("commands").get("post_install"):
+                ret = os.system(i)
+        add_package_to_list(pkg,get_module_name(__name__),{'version':version[1:],'files':files,'tooth_data':tooth_data})
+        shutil.rmtree(".mpm/tmp/"+save_name)
+        if os.path.exists(".mpm/tmp/"+save_name+suffix):
+            os.remove(".mpm/tmp/"+save_name+suffix)
     print("\033[92m安装"+pkg+"成功\033[0m")
     global INSTALLED_NUM
     INSTALLED_NUM += 1
     return True
 
-def check_tooth_data(pkg_name, tooth_data):
+def check_tooth_data(pkg_name, tooth_data,no_check_pkg_name=False):
     if not tooth_data.get("format_version") == 2:
         return False
-    if not tooth_data.get("tooth") == pkg_name:
+    if no_check_pkg_name == False and not tooth_data.get("tooth").lower() == pkg_name.lower():
         return False
     if not tooth_data.get("version"):
         return False

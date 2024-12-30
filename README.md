@@ -22,6 +22,9 @@
 # 首先安装pyinstaller
 pip install pyinstaller
 
+# 然后安装项目的依赖，目前有依赖packaging
+pip install -r requirement.txt
+
 # 编译程序
 pyinstaller -F --add-data modules:modules --hidden-import packaging main.py
 

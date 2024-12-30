@@ -1,5 +1,5 @@
-main    = 0
-second  = 0
-third   = 5
+MAJOR   = 0
+MINOR   = 0
+PATCH   = 6
 
-VERSION = str(main)+"."+str(second)+"."+str(third)
+VERSION = str(MAJOR)+"."+str(MINOR)+"."+str(PATCH)
