@@ -1,4 +1,6 @@
-# 编写模块 
+# 编写模块  
+mpm采用了模块化的方式，使得开发者可以容易写出自己的功能  
+编写好模块文件（python文件）后放入modules文件夹即可  
 
 ---
 ## 编写示例
@@ -42,15 +44,18 @@ cmds: 多条命令的列表
 该函数的使用示例已在上面的编写示例提到  
 
 ### func模块
-#### def add\_package\_list(package\_name:str,data:dict): 往配置文件添加一个软件包
+#### def add\_package\_to\_list(package\_name:str,package\_type:str,data:dict): 往配置文件添加一个软件包
 package\_name: 软件包名  
+package\_type: 软件包类型，应与模块名相同
 data: 软件包数据，是一个字典，可以写一些信息进去（例如软件包版本，软件包依赖等）  
 返回值: bool（添加成功为True，软件包名重复为False）  
 
-#### def remove\_package(package\_name:str): 删除配置文件里的软件包
+#### def remove\_package\_from\_list(package\_name:str,package\_type:str): 删除配置文件里的软件包
 package\_name: 软件包名  
+package\_type: 软件包类型，应与模块名相同
 返回值: bool（软件包不存在为False，删除成功为True）  
 
-#### def get\_package(package\_name:str): 获取软件包数据
+#### def get\_package\_from\_list(package\_name:str,package\_type:str): 获取软件包数据
 package\_name: 软件包名  
+package\_type: 软件包类型，应与模块名相同
 返回值: bool|dict（软件包不存在为False，否则为dict）

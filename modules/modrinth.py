@@ -13,7 +13,7 @@ _cmds = [
     },
     {
         "cmd": "m-remove",
-        "alias": ["m-r","m-uninstall"],
+        "alias": ["m-uninstall","m-r"],
         "func_name": "modrinth_remove_package",
         "help": "删除软件包"
     },
@@ -265,7 +265,7 @@ def modrinth_remove_package(params):
                 print("\033[93m警告：缺少文件"+install_dir+j+"，忽略\033[0m")
                 continue
             if not pkg['files'][j] == sha1_file(install_dir+j):
-                print("\033[93m警告：文件"+install_dir+j+"不是原来的文件，忽略\033[0m")
+                print("\033[93m警告：文件"+install_dir+j+"不是原来的文件，但仍然会被删除\033[0m")
                 continue
             os.remove(install_dir+j)
         new_pkgcfg = pkgcfg.copy()
