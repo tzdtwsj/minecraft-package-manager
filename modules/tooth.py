@@ -90,6 +90,8 @@ def install(pkg,pre_version=None):
         tooth_data = request(GHPROXY+"https://github.com/"+pkg.split("/")[1]+"/"+pkg.split("/")[2]+"/raw/"+version+"/tooth.json",headers={"User-Agent":"Mozilla/5.0 (Linux; Android 13; Phone) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Mobile Safari/537.36 EdgA/113.0.1774.38"})
         if tooth_data == False:
             print("请求tooth包数据失败")
+            if GHPROXY == "":
+                print("\033[93m检测到GHPROXY环境变量未设置，可能无法从github获取软件包\n在Linux中，你可以这么设置环境变量：\nexport GHPROXY=https://ghgo.xyz/\n在Windows中，你可以这么设置环境变量：\nset GHPROXY=https://ghgo.xyz/ \n网上有很多github代理加速，可以自行寻找地址\n注意：结尾要加斜杠\033[0m")
             return False
         elif tooth_data == True:
             print("请求tooth包数据超时")
@@ -106,17 +108,17 @@ def install(pkg,pre_version=None):
         if tooth_data.get("platforms"): # 特定架构的配置替代原本的配置
             for i in tooth_data.get("platforms"): # 同系统没指定架构
                 if i['goos'] == GOOS and i.get('goarch') == None:
-                    tooth_data['commands'] = {}
-                    tooth_data['dependencies'] = {}
-                    tooth_data['files'] = {}
+                    #tooth_data['commands'] = {}
+                    #tooth_data['dependencies'] = {}
+                    #tooth_data['files'] = {}
                     for j in ["asset_url","commands","dependencies","prerequisites","files"]:
                         if i.get(j) != None:
                             tooth_data[j] = i.get(j)
             for i in tooth_data.get("platforms"):# 同系统同架构
                 if i['goos'] == GOOS and i.get('goarch') != None and i.get('goarch') == GOARCH:
-                    tooth_data['commands'] = {}
-                    tooth_data['dependencies'] = {}
-                    tooth_data['files'] = {}
+                    #tooth_data['commands'] = {}
+                    #tooth_data['dependencies'] = {}
+                    #tooth_data['files'] = {}
                     for j in ["asset_url","commands","dependencies","prerequisites","files"]:
                         if i.get(j) != None:
                             tooth_data[j] = i.get(j)
@@ -300,3 +302,8 @@ elif platform.machine() == "armv7l":
     GOARCH = "arm"
 else:
     raise OSError("暂不支持你的系统的架构："+platform.machine())
+
+if os.environ.get("GHPROXY") != None:
+    GHPROXY = os.environ.get("GHPROXY")
+else:
+    GHPROXY = ""

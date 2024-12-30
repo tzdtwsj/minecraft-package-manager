@@ -16,3 +16,14 @@
 ## 特点
 目前已经实现功能模块化，可以自己写功能，然后把写好功能的py文件放进modules文件夹  
 [不是很详细的模块开发文档](docs/write_module.md)  
+
+## 编译成二进制文件
+```bash
+# 首先安装pyinstaller
+pip install pyinstaller
+
+# 编译程序
+pyinstaller -F --add-data modules:modules --hidden-import packaging main.py
+
+# 编译好的程序在dist文件夹下
+```
