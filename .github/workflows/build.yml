@@ -1,0 +1,20 @@
+name: Generate binary file
+run-name: build
+on: [push,workflow_call]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - run: pip install -r requirements.txt
+      - run: pip install pyinstaller
+      - run: pyinstaller -F --add-data modules:modules --hidden-import packaging main.py
+      - uses: actions/upload-artifact@v3
+        with:
+          name: mpm-x86_64
+          path: dist/main
