@@ -36,7 +36,7 @@ name: 模块名，需要和文件名xxx.py中的xxx相同，如果闲麻烦，�
 cmd: 命令名  
 func\_name: 需要被调用函数的函数名  
 alias: 别名  
-help\_text: 帮助信息（使用npm help时输出的内容）  
+help\_text: 帮助信息（使用mpm help时输出的内容）  
 
 #### def registers(name:str, cmds:list): 注册多条命令
 name: 模块名，需要和文件名xxx.py中的xxx相同，如果闲麻烦，可以传`get_module_name(__name__)`，不正确的模块名会导致命令回调函数无法调用  

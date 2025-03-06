@@ -4,7 +4,7 @@ import urllib.error
 import json
 import sys
 import os
-from version import VERSION
+import version
 import hashlib
 from time import sleep
 import zipfile
@@ -225,7 +225,7 @@ def untgz(tgz_file,save_dir):
 
 def show_help(_=None):
     from commands import commands
-    print(f"""mpm v{VERSION} By tzdtwsj
+    print(f"""mpm v{version.VERSION} By tzdtwsj
 用法：{os.path.basename(sys.argv[0])} [参数] 命令
 
 mpm是一个在命令行使用的《Minecraft》服务端软件包管理工具""")
@@ -245,5 +245,5 @@ mpm是一个在命令行使用的《Minecraft》服务端软件包管理工具""
     raise ShowHelpException()
 
 def show_version(_=None):
-    print(f"""mpm v{VERSION} By tzdtwsj
+    print(f"""mpm v{version.VERSION} By tzdtwsj
 project link: https://github.com/tzdtwsj/minecraft-package-manager""")

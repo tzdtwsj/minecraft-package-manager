@@ -4,7 +4,7 @@ on: [push,workflow_call]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -14,7 +14,7 @@ jobs:
       - run: pip install -r requirements.txt
       - run: pip install pyinstaller
       - run: pyinstaller -F --add-data modules:modules --hidden-import packaging main.py
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: mpm-x86_64
           path: dist/main

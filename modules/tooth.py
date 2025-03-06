@@ -48,7 +48,7 @@ def tooth_install(params):
                 return
         if install(i,pre_version) == False:
             print("\033[91m安装"+pkg+"失败\033[0m")
-            return
+            #return
     print(f"\033[92m有{INSTALLED_NUM}个软件包安装成功\033[0m")
 
 
@@ -92,7 +92,7 @@ def install(pkg,pre_version=None):
         if tooth_data == False:
             print("请求tooth包数据失败")
             if GHPROXY == "":
-                print("\033[93m检测到GHPROXY环境变量未设置，可能无法从github获取软件包\n在Linux中，你可以这么设置环境变量：\nexport GHPROXY=https://ghgo.xyz/\n在Windows中，你可以这么设置环境变量：\nset GHPROXY=https://ghgo.xyz/ \n网上有很多github代理加速，可以自行寻找地址\n注意：结尾要加斜杠\033[0m")
+                print("\033[93m检测到GHPROXY环境变量未设置，可能无法从github获取软件包\n在Linux中，你可以这么设置环境变量：\nexport GHPROXY=https://ghproxy.cn/\n在Windows中，你可以这么设置环境变量：\nset GHPROXY=https://ghproxy.cn/ \n网上有很多github代理加速，可以自行寻找地址\n注意：结尾要加斜杠\033[0m")
             return False
         elif tooth_data == True:
             print("请求tooth包数据超时")
@@ -155,7 +155,14 @@ def install(pkg,pre_version=None):
         if not os.path.exists(".mpm/tmp"):
             os.mkdir(".mpm/tmp")
         print("下载数据中，从"+url)
-        request(url=url,save_name=".mpm/tmp/"+save_name+suffix,headers={"User-Agent":"Mozilla/5.0 (Linux; Android 13; Phone) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Mobile Safari/537.36 EdgA/113.0.1774.38"})
+        result = request(url=url,save_name=".mpm/tmp/"+save_name+suffix,headers={"User-Agent":"Mozilla/5.0 (Linux; Android 13; Phone) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Mobile Safari/537.36 EdgA/113.0.1774.38"})
+        if not result == 200:
+            print("下载失败，状态码："+str(result))
+            try:
+                os.remove(".mpm/tmp/"+save_name+suffix)
+            except FileNotFoundError:
+                pass
+            return False
         if suffix == ".zip":
             unzip(".mpm/tmp/"+save_name+suffix,".mpm/tmp/"+save_name)
         elif suffix == ".tar.gz":
@@ -172,7 +179,7 @@ def install(pkg,pre_version=None):
             for i in tooth_data.get("files").get("place"):
                 places = place_files(".mpm/tmp/"+save_name+base_dir,i['src'],i['dest'])
                 if places == False:
-                    print("\033[91m源文件"+i[src]+"不存在，无法安装文件\033[0m")
+                    print("\033[91m源文件"+i['src']+"不存在，无法安装文件\033[0m")
                     return False
                 for j in places:
                     files[j] = places[j]
@@ -262,7 +269,14 @@ def install(pkg,pre_version=None):
                 os.mkdir(".mpm/tmp")
             shutil.rmtree(".mpm/tmp/"+save_name)
             print("下载数据中，从"+url)
-            request(url=url,save_name=".mpm/tmp/"+save_name+suffix,headers={"User-Agent":"Mozilla/5.0 (Linux; Android 13; Phone) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Mobile Safari/537.36 EdgA/113.0.1774.38"})
+            result = request(url=url,save_name=".mpm/tmp/"+save_name+suffix,headers={"User-Agent":"Mozilla/5.0 (Linux; Android 13; Phone) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Mobile Safari/537.36 EdgA/113.0.1774.38"})
+            if not result == 200:
+                print("下载失败，状态码："+str(result))
+                try:
+                    os.remove(".mpm/tmp/"+save_name+suffix)
+                except FileNotFoundError:
+                    pass
+                return False
             if suffix == ".zip":
                 unzip(".mpm/tmp/"+save_name+suffix,".mpm/tmp/"+save_name)
             elif suffix == ".tar.gz":
@@ -279,7 +293,7 @@ def install(pkg,pre_version=None):
             for i in tooth_data.get("files").get("place"):
                 places = place_files(".mpm/tmp/"+save_name+"/",i['src'],i['dest'])
                 if places == False:
-                    print("\033[91m源文件"+i[src]+"不存在，无法安装文件\033[0m")
+                    print("\033[91m源文件"+i['src']+"不存在，无法安装文件\033[0m")
                     return False
                 for j in places:
                     files[j] = places[j]
@@ -305,12 +319,14 @@ def check_tooth_data(pkg_name, tooth_data,no_check_pkg_name=False):
         return False
     if not tooth_data.get("version"):
         return False
-    if not ( tooth_data.get("info") and type(tooth_data.get("info")) == dict and tooth_data['info'].get("name") and tooth_data['info'].get("description") and tooth_data['info'].get("author") and tooth_data['info'].get("tags") != None and type(tooth_data['info'].get("tags")) == list ):
+    if not ( tooth_data.get("info") != None and type(tooth_data.get("info")) == dict and tooth_data['info'].get("name") and tooth_data['info'].get("description") != None and tooth_data['info'].get("author") != None and tooth_data['info'].get("tags") != None and type(tooth_data['info'].get("tags")) == list ):
         return False
     return True
 
 def compare_version(version,pattern):
     # 版本对比函数，检测version是否在pattern范围里，写这玩意真要写死我了
+    if version == pattern:
+        return True
     for i in pattern.split(" || "):
         yf = []
         for j in i.split(" "):
@@ -329,7 +345,7 @@ def compare_version(version,pattern):
                     if k != "x":
                         yf2 += k+"."
                     else:
-                        djwsx = len(yf2.split("."))# 1:x.x.x 2:1.x.x 3:1.1.x
+                        djwsx = len(yf2.split("."))# 1:x.x.x 2:1.x.x 3:1.1.x 4:1.1.1 5:1.1.1-beta
                         for l in range(3-djwsx):
                             yf2 += "0."
                         yf2 += "0"
